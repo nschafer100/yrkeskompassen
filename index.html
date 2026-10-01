@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yrkeskompassen</title>
+
+  <style>
+    :root {
+      --navy: #07182e;
+      --blue: #1261a0;
+      --light-blue: #eaf4fb;
+      --white: #ffffff;
+      --text: #172033;
+      --muted: #667085;
+      --border: #d7e0e8;
+      --success: #176b4d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(7, 24, 46, 0.97),
+          rgba(18, 97, 160, 0.88)
+        );
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .app {
+      width: min(100%, 720px);
+      background: var(--white);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 24px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 6vw, 42px);
+    }
+
+    .header p {
+      margin: 0;
+      color: #d8e8f5;
+      line-height: 1.5;
+    }
+
+    .content {
+      padding: 24px;
+    }
+
+    .progress-area {
+      margin-bottom: 24px;
+    }
+
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .progress-track {
+      height: 12px;
+      background: #e8edf2;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--blue), #48a9e6);
+      transition: width 0.3s ease;
+    }
+
+    .intro h2,
+    .question-title,
+    .result-title {
+      margin-top: 0;
+    }
+
+    .intro p {
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .start-button,
+    .next-button,
+    .restart-button {
+      width: 100%;
+      border: 0;
+      border-radius: 14px;
+      padding: 16px 20px;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+      background: var(--blue);
+      color: var(--white);
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .start-button:hover,
+    .next-button:hover,
+    .restart-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .next-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      transform: none;
+    }
+
+    .answers {
+      display: grid;
+      gap: 12px;
+      margin: 22px 0;
+    }
+
+    .answer-button {
+      width: 100%;
+      padding: 15px 16px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--white);
+      color: var(--text);
+      text-align: left;
+      font-size: 16px;
+      line-height: 1.4;
+      cursor: pointer;
+      transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        transform 0.15s ease;
+    }
+
+    .answer-button:hover {
+      border-color: var(--blue);
+      transform: translateY(-1px);
+    }
+
+    .answer-button.selected {
+      border-color: var(--blue);
+      background: var(--light-blue);
+      box-shadow: 0 0 0 2px rgba(18, 97, 160, 0.12);
+    }
+
+    .result-card {
+      border-radius: 18px;
+      background: var(--light-blue);
+      padding: 22px;
+      margin: 20px 0;
+      border-left: 6px solid var(--blue);
+    }
+
+    .result-label {
+      color: var(--success);
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 13px;
+    }
+
+    .result-role {
+      font-size: clamp(30px, 7vw, 46px);
+      margin: 8px 0 12px;
+      color: var(--navy);
+    }
+
+    .result-description {
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    .secondary-result {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 20px;
+    }
+
+    .secondary-result h3 {
+      margin-top: 0;
+      color: var(--navy);
+    }
+
+    .privacy-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 0;
+        align-items: stretch;
+      }
+
+      .app {
+        min-height: 100vh;
+        border-radius: 0;
+      }
+
+      .header,
+      .content {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header class="header">
+      <h1>Yrkeskompassen</h1>
+      <p>Svara på 11 frågor och se vilken yrkesroll som passar dig bäst.</p>
+    </header>
+
+    <section class="content">
+      <div id="progressArea" class="progress-area hidden">
+        <div class="progress-text">
+          <span id="progressText">Fråga 1 av 11</span>
+          <span id="progressPercent">0 %</span>
+        </div>
+
+        <div class="progress-track">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+      </div>
+
+      <section id="introScreen" class="intro">
+        <h2>Vilken roll är du?</h2>
+
+        <p>
+          Välj det svar som känns mest som du. Det finns inga rätt eller fel
+          svar. När du är klar räknar Yrkeskompassen automatiskt ut ditt
+          resultat.
+        </p>
+
+        <button id="startButton" class="start-button" type="button">
+          Starta Yrkeskompassen
+        </button>
+
+        <p class="privacy-note">
+          Inga namn, personuppgifter eller svar sparas.
+        </p>
+      </section>
+
+      <section id="quizScreen" class="hidden">
+        <h2 id="questionTitle" class="question-title"></h2>
+
+        <div id="answersContainer" class="answers"></div>
+
+        <button id="nextButton" class="next-button" type="button" disabled>
+          Nästa fråga
+        </button>
+      </section>
+
+      <section id="resultScreen" class="hidden">
+        <p class="result-label">Ditt resultat</p>
+
+        <div class="result-card">
+          <h2 id="resultRole" class="result-role"></h2>
+          <p id="resultDescription" class="result-description"></p>
+        </div>
+
+        <div id="secondaryResult" class="secondary-result hidden">
+          <h3 id="secondaryTitle"></h3>
+          <p id="secondaryDescription"></p>
+        </div>
+
+        <button id="restartButton" class="restart-button" type="button">
+          Gör quizet igen
+        </button>
+
+        <p class="privacy-note">
+          Resultatet är vägledande och visar vilken typ av arbetssätt du verkar
+          föredra.
+        </p>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const roles = {
+      byggaren: {
+        name: "Byggaren",
+        description:
+          "Du gillar att få saker att hända på riktigt. Du är praktisk, handlingskraftig och trivs när du får bygga, fixa eller förbättra något. Områden som produktion, tillverkning, underhåll och konstruktion kan passa dig."
+      },
+
+      analytikern: {
+        name: "Analytikern",
+        description:
+          "Du vill förstå hur och varför saker fungerar innan du bestämmer dig. Du är nyfiken, noggrann och bra på att hitta detaljer som andra missar. Områden som test, kvalitet, dataanalys och forskning kan passa dig."
+      },
+
+      ledaren: {
+        name: "Ledaren",
+        description:
+          "Du får människor att samarbeta och ser till att alla känner sig delaktiga. Du är bra på att kommunicera, motivera och skapa ordning när det blir rörigt. Områden som projektledning, ledarskap, HR och People Experience kan passa dig."
+      },
+
+      strategen: {
+        name: "Strategen",
+        description:
+          "Du tänker flera steg framåt och gillar att ha en plan. Du ser helheten, väger olika alternativ och hittar smarta vägar mot målet. Områden som inköp, logistik, ekonomi och verksamhetsutveckling kan passa dig."
+      },
+
+      kreatoren: {
+        name: "Kreatören",
+        description:
+          "Du ser möjligheter där andra ser en tom yta. Du gillar att skapa, uttrycka idéer och göra upplevelser både snyggare och enklare. Områden som UX, design, produktdesign, marknad och kommunikation kan passa dig."
+      },
+
+      innovatoren: {
+        name: "Innovatören",
+        description:
+          "Du tänker gärna nytt och testar idéer som andra ännu inte har provat. Du gillar teknik, framtidslösningar och att göra saker smartare. Områden som mjukvara, AI, automation och digitalisering kan passa dig."
+      }
+    };
+
+    const questions = [
+      {
+        question: "Du måste starta en helt onödig klubb. Vilken väljer du?",
+        answers: [
+          {
+            text: "Föreningen som fixar söndriga saker i stället för att köpa nytt",
+            role: "byggaren"
+          },
+          {
+            text: "Klubben som utreder mysterier",
+            role: "analytikern"
+          },
+          {
+            text: "Klubben som ordnar sociala aktiviteter",
+            role: "ledaren"
+          },
+          {
+            text: "Organisationen som planerar resor, event och projekt",
+            role: "strategen"
+          },
+          {
+            text: "Klubben för keramik",
+            role: "kreatoren"
+          },
+          {
+            text: "Gruppen som leker med robotar",
+            role: "innovatoren"
+          }
+        ]
+      },
+
+      {
+        question: "Om jorden invaderas av utomjordingar, vad gör du?",
+        answers: [
+          {
+            text: "Bygger och ställer ut fällor",
+            role: "byggaren"
+          },
+          {
+            text: "Försöker förstå deras språk",
+            role: "analytikern"
+          },
+          {
+            text: "Försöker skapa en allians med utomjordingarna",
+            role: "ledaren"
+          },
+          {
+            text: "Tänker igenom alla risker",
+            role: "strategen"
+          },
+          {
+            text: "Beundrar deras utseende",
+            role: "kreatoren"
+          },
+          {
+            text: "Försöker komma över deras avancerade teknik",
+            role: "innovatoren"
+          }
+        ]
+      },
+
+      {
+        question: "Vilket djur passar bäst som ditt spirit animal?",
+        answers: [
+          {
+            text: "Bäver – bygger vidare även när ingen bett om en ny damm",
+            role: "byggaren"
+          },
+          {
+            text: "Uggla – sitter tyst, observerar och vet lite för mycket",
+            role: "analytikern"
+          },
+          {
+            text: "Schimpans – social, högljudd och får hela gruppen med sig",
+            role: "ledaren"
+          },
+          {
+            text: "Spindel – har ett nätverk och en plan för exakt allt",
+            role: "strategen"
+          },
+          {
+            text: "Påfågel – gör entré som om livet alltid har premiär",
+            role: "kreatoren"
+          },
+          {
+            text: "Kråka – smart, nyfiken och samlar på märkliga uppfinningar",
+            role: "innovatoren"
+          }
+        ]
+      },
+
+      {
+        question: "Du ärver en öde ö. Vad gör du?",
+        answers: [
+          {
+            text: "Börjar bygga vägar och infrastruktur",
+            role: "byggaren"
+          },
+          {
+            text: "Undersöker öns djur och natur",
+            role: "analytikern"
+          },
+          {
+            text: "Bjuder in människor och skapar en gemenskap",
+            role: "ledaren"
+          },
+          {
+            text: "Gör en plan för de kommande tio åren",
+            role: "strategen"
+          },
+          {
+            text: "Fyller ön med konst",
+            role: "kreatoren"
+          },
+          {
+            text: "Befolkar ön med robotar",
+            role: "innovatoren"
+          }
+        ]
+      },
+
+      {
+        question: "Det står ett inslaget paket utanför din dörr. Vad gör du?",
+        answers: [
+          {
+            text: "Tar fram verktyg och öppnar det",
+            role: "byggaren"
+          },
+          {
+            text: "Undersöker det noggrant först",
+            role: "analytikern"
+          },
+          {
+            text: "Öppnar det tillsammans med andra",
+            role: "ledaren"
+          },
+          {
+            text: "Väntar tills du har bedömt alla risker",
+            role: "strategen"
+          },
+          {
+            text: "Kritiserar valet av inslagspapper",
+            role: "kreatoren"
+          },
+          {
+            text: "Försöker ta reda på vem som skickat det",
+            role: "innovatoren"
+          }
+        ]
+      },
+
+      {
+        question: "Vilken spelmekanik skulle du helst ha som superkraft?",
+        answers: [
+          {
+            text: "Oändlig stamina",
+            role: "byggaren"
+          },
+          {
+            text: "Låsa upp hemligheter",
+            role: "analytikern"
+          },
+          {
+            text: "Oändliga liv",
+            role: "ledaren"
+          },
+          {
+            text: "Se konsekvenserna av dina val",
+            role: "strategen"
+          },
+          {
+            text: "Uppgradera allt",
+            role: "kreatoren"
+          },
+          {
+            text: "Snabbspola",
+            role: "innovatoren"
+          }
+        ]
+      },
+
+      {
+        question: "Du blir statsminister. Vad gör du först?",
+        answers: [
+          {
+            text: "Lägger mer resurser på vägar och infrastruktur",
+            role: "byggaren"
+          },
+          {
+            text: "Beställer en jättestor utredning innan något beslut tas",
+            role: "analytikern"
+          },
+          {
+            text: "Samlar alla partier och försöker få dem att samarbeta",
+            role: "ledaren"
+          },
+          {
+            text: "Skriver en tioårsplan med mål, budget och reservplan",
+            role: "strategen"
+          },
+          {
+            text: "Designar om hela landet så att allt ser trevligare ut",
+            role: "kreatoren"
+          },
+          {
+            text: "Låter AI sköta administrationen medan du tar en fika",
+            role: "innovatoren"
+          }
+        ]
+      },
+
+      {
+        question: "50 personer väntar på instruktioner. Vad gör du?",
+        answers: [
+          {
+            text: "Sätter folk i arbete",
+            role: "byggaren"
+          },
+          {
+            text: "Ställer många följdfrågor",
+            role: "analytikern"
+          },
+          {
+            text: "Håller ett motiverande tal",
+            role: "ledaren"
+          },
+          {
+            text: "Lägger upp en plan",
+            role: "strategen"
+          },
+          {
+            text: "Ritar upp en vision av hur det borde bli",
+            role: "kreatoren"
+          },
+          {
+            text: "Effektiviserar arbetet så att färre personer behövs",
+            role: "innovatoren"
+          }
+        ]
+      },
+
+      {
+        question: "Om du var med i ett TV-program, vilket väljer du?",
+        answers: [
+          {
+            text: "Gold Rush",
+            role: "byggaren"
+          },
+          {
+            text: "Formel 1: Drive to Survive",
+            role: "analytikern"
+          },
+          {
+            text: "Förrädarna",
+            role: "ledaren"
+          },
+          {
+            text: "Robinson",
+            role: "strategen"
+          },
+          {
+            text: "Hela Sverige bakar",
+            role: "kreatoren"
+          },
+          {
+            text: "Draknästet",
+            role: "innovatoren"
+          }
+        ]
+      },
+
+      {
+        question: "Om du var fast i ett spel resten av livet, vilket väljer du?",
+        answers: [
+          {
+            text: "Minecraft",
+            role: "byggaren"
+          },
+          {
+            text: "Civilization",
+            role: "analytikern"
+          },
+          {
+            text: "Among Us",
+            role: "ledaren"
+          },
+          {
+            text: "Cities: Skylines",
+            role: "strategen"
+          },
+          {
+            text: "The Sims",
+            role: "kreatoren"
+          },
+          {
+            text: "Mario Kart",
+            role: "innovatoren"
+          }
+        ]
+      },
+
+      {
+        question:
+          "Du får en robot i födelsedagspresent. Vad lär du den?",
+        answers: [
+          {
+            text: "Sortera Lego",
+            role: "byggaren"
+          },
+          {
+            text: "Studera sin omgivning och rapportera sina observationer",
+            role: "analytikern"
+          },
+          {
+            text: "Hälsa på nya människor och få dem att känna sig välkomna",
+            role: "ledaren"
+          },
+          {
+            text: "Hitta den snabbaste vägen till maten",
+            role: "strategen"
+          },
+          {
+            text: "Posera snyggt framför kameran",
+            role: "kreatoren"
+          },
+          {
+            text: "Samla burkar och betala sin egen mat",
+            role: "innovatoren"
+          }
+        ]
+      }
+    ];
+
+    const introScreen = document.getElementById("introScreen");
+    const quizScreen = document.getElementById("quizScreen");
+    const resultScreen = document.getElementById("resultScreen");
+    const progressArea = document.getElementById("progressArea");
+
+    const startButton = document.getElementById("startButton");
+    const nextButton = document.getElementById("nextButton");
+    const restartButton = document.getElementById("restartButton");
+
+    const questionTitle = document.getElementById("questionTitle");
+    const answersContainer = document.getElementById("answersContainer");
+
+    const progressText = document.getElementById("progressText");
+    const progressPercent = document.getElementById("progressPercent");
+    const progressBar = document.getElementById("progressBar");
+
+    const resultRole = document.getElementById("resultRole");
+    const resultDescription = document.getElementById("resultDescription");
+
+    const secondaryResult = document.getElementById("secondaryResult");
+    const secondaryTitle = document.getElementById("secondaryTitle");
+    const secondaryDescription =
+      document.getElementById("secondaryDescription");
+
+    let currentQuestionIndex = 0;
+    let selectedRole = null;
+
+    let scores = createEmptyScores();
+
+    function createEmptyScores() {
+      return {
+        byggaren: 0,
+        analytikern: 0,
+        ledaren: 0,
+        strategen: 0,
+        kreatoren: 0,
+        innovatoren: 0
+      };
+    }
+
+    function startQuiz() {
+      currentQuestionIndex = 0;
+      selectedRole = null;
+      scores = createEmptyScores();
+
+      introScreen.classList.add("hidden");
+      resultScreen.classList.add("hidden");
+      quizScreen.classList.remove("hidden");
+      progressArea.classList.remove("hidden");
+
+      showQuestion();
+    }
+
+    function showQuestion() {
+      selectedRole = null;
+      nextButton.disabled = true;
+
+      const currentQuestion = questions[currentQuestionIndex];
+
+      questionTitle.textContent = currentQuestion.question;
+      answersContainer.innerHTML = "";
+
+      currentQuestion.answers.forEach((answer) => {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className = "answer-button";
+        button.textContent = answer.text;
+
+        button.addEventListener("click", () => {
+          selectAnswer(button, answer.role);
+        });
+
+        answersContainer.appendChild(button);
+      });
+
+      const questionNumber = currentQuestionIndex + 1;
+      const percent = Math.round(
+        (questionNumber / questions.length) * 100
+      );
+
+      progressText.textContent =
+        "Fråga " + questionNumber + " av " + questions.length;
+
+      progressPercent.textContent = percent + " %";
+      progressBar.style.width = percent + "%";
+
+      if (currentQuestionIndex === questions.length - 1) {
+        nextButton.textContent = "Visa mitt resultat";
+      } else {
+        nextButton.textContent = "Nästa fråga";
+      }
+    }
+
+    function selectAnswer(selectedButton, role) {
+      const allAnswerButtons =
+        answersContainer.querySelectorAll(".answer-button");
+
+      allAnswerButtons.forEach((button) => {
+        button.classList.remove("selected");
+      });
+
+      selectedButton.classList.add("selected");
+      selectedRole = role;
+      nextButton.disabled = false;
+    }
+
+    function goToNextQuestion() {
+      if (!selectedRole) {
+        return;
+      }
+
+      scores[selectedRole] += 1;
+
+      if (currentQuestionIndex < questions.length - 1) {
+        currentQuestionIndex += 1;
+        showQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      quizScreen.classList.add("hidden");
+      progressArea.classList.add("hidden");
+      resultScreen.classList.remove("hidden");
+
+      const sortedScores = Object.entries(scores).sort(
+        (first, second) => second[1] - first[1]
+      );
+
+      const highestScore = sortedScores[0][1];
+
+      const winningRoles = sortedScores
+        .filter((item) => item[1] === highestScore)
+        .map((item) => item[0]);
+
+      if (winningRoles.length > 1) {
+        showTieResult(winningRoles);
+      } else {
+        showSingleResult(sortedScores);
+      }
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+
+    function showSingleResult(sortedScores) {
+      const firstRoleKey = sortedScores[0][0];
+      const secondRoleKey = sortedScores[1][0];
+
+      const firstRole = roles[firstRoleKey];
+      const secondRole = roles[secondRoleKey];
+
+      resultRole.textContent = firstRole.name;
+      resultDescription.textContent = firstRole.description;
+
+      if (sortedScores[1][1] > 0) {
+        secondaryResult.classList.remove("hidden");
+        secondaryTitle.textContent =
+          "Du har också drag av " + secondRole.name;
+
+        secondaryDescription.textContent =
+          secondRole.description;
+      } else {
+        secondaryResult.classList.add("hidden");
+      }
+    }
+
+    function showTieResult(winningRoles) {
+      const winningNames = winningRoles.map(
+        (roleKey) => roles[roleKey].name
+      );
+
+      resultRole.textContent = winningNames.join(" + ");
+
+      resultDescription.textContent =
+        "Du har en kombination av flera starka sidor. " +
+        winningRoles
+          .map((roleKey) => roles[roleKey].description)
+          .join(" ");
+
+      secondaryResult.classList.add("hidden");
+    }
+
+    function restartQuiz() {
+      currentQuestionIndex = 0;
+      selectedRole = null;
+      scores = createEmptyScores();
+
+      resultScreen.classList.add("hidden");
+      quizScreen.classList.add("hidden");
+      progressArea.classList.add("hidden");
+      introScreen.classList.remove("hidden");
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+
+    startButton.addEventListener("click", startQuiz);
+    nextButton.addEventListener("click", goToNextQuestion);
+    restartButton.addEventListener("click", restartQuiz);
+  </script>
+</body>
+</html>
